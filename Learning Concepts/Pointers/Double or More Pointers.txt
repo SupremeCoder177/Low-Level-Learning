@@ -1,0 +1,69 @@
+This is where pointers get a bit confusing for most people, because it is hard to wrap our minds around the concept
+of something pointing to something else, and that thing is pointing to something else as well.
+
+And this chain continues until we reach the final thing which is not pointing to anything.
+
+Take this code for example
+
+int num = 10;
+int* pNum = &num; 
+int** spNum = &pnum;
+
+Now the reason we add 2 stard in spNum is to indicate to the compiler that the address stored in this pointer can be 
+de-refrenced two times.
+
+int*** tpNum = &spNum;
+
+Here three stars indicate to the compiler that we can de-refrence this pointer 3 times. 
+
+So generally speaking the number of *'s you see attached to a pointer indicated how many times you can de-refrence the address stored
+in that pointer.
+
+And the reason you can't do something like 
+
+int num = 10;
+int* pNum = &num;
+int* spNum = &pNUm;
+
+Is because memory address have a type in C/C++, and you can't store a memory address of type int** into a int* variable.
+
+But how is it decided that what is the type of the memory address at any random data slot?
+
+Here is how it works, if the data stored in a data slot is something normal like an int, char etc. then
+the memory address of that data slot will have a type of int* or char* depending on the type of data it stores.
+
+When you want to assign a pointer to point to this address, it will be of type int* or char* as well, 
+but the memory address of this pointer will now have int** or char** as its data type,
+
+and now if you want to assign a second pointer to point to the int*, char* pointer, then you need to assign
+int** or char** as its data type, otherwise it wil not work. 
+
+And so on.
+
+Basically the data slot type and the memory address type follows this formula.
+
+memory_address_type = data_slot_type + *
+
+of if data_slot_type = int
+then memory_address_type = int + * = int*
+
+if data_slot_type = int*
+then memory_address_type = int* + * = int**
+
+and so on
+
+And the formula for knowing how many times you can de-refrence a variable is
+
+ALLOWED_DEREFRENCE_TIMES = Number of *'s in data_slot_type
+
+so if data_slot_type = int
+then ALLOWED_DEREFRENCE_TIMES = 0
+
+if data_slot_type = int*
+then ALLOWED_DEREFRENCE_TIMES = 1
+
+if data_slot_type = int**
+then ALLOWED_DEREFRENCE_TIMES = 2
+
+and so on.
+

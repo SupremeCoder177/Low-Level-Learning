@@ -1,0 +1,15 @@
+A pointer is a type of variable which holds an address, what is an address you ask?
+
+Well everything is stored somewhere in your computer, but how does your program know
+where to look for things when it needs it, so each data slot has an address assigned to it,
+which is just a number, usually it is written in hexadecimal like 0x120f3a or something.
+
+A pointer itself has an address and the data slot which is assigned to that pointer, contains 
+an address.
+
+When we de-refrence a pointer like int num = 10; int* pNum= &num; printf("%d", *pNum);
+
+It will access the data stored in the address that it itself is storing in its own data slot.
+
+NOTE:  & returns the address of anything, normal variable or pointers alike
+       * is used to define a pointer as well as de-refrence it.
