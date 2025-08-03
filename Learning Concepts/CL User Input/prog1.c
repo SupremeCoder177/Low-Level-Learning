@@ -29,6 +29,7 @@ char* get_string(const char* prompt, size_t max_len){
             print("Please enter something !");
             continue;
         }
+        buf[strcspn(buf, "\n")] = '\0';
         return buf;
     }
 }
@@ -108,7 +109,7 @@ int main(){
     */
 
     char* name = get_string("What is your name:", 100);
-    printf("Hello there %s !!", name);
+    printf("Hello there %s !!\n", name);
 
     int age = get_int("What is your age:", 5);
     if(age > 21){
@@ -138,18 +139,16 @@ int main(){
     while(1){
         print("Well then pay up.");
         amount = get_float(">", 10);
-        if(user_choice == 1 && fdim(amount, 3.12) < 0.01){
+        if(user_choice == 1 && fabs(amount - 3.12) < 0.001){
             break;
         }
-        else if(user_choice == 2 && fdim(amount, 1.32) < 0.01){
+        else if(user_choice == 2 && fabs(amount - 1.32) < 0.001){
             break;
         }else{
             print("That's not the right amount buddy.");
         }
     }
     print("Well then enjoy your drink pal, goodbye .");
-
-    
 
     free(name);
 
