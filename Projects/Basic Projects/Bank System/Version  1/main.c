@@ -11,15 +11,16 @@
 #define MAX_PASSWORD_LEN 20
 #define MIN_PASSWORD_LEN 10
 #define DATA_LENGTH 20
-#define READ_LENGTH MAX_NAME_LEN + MAX_PASSWORD_LEN + DATA_LENGTH + 2 * 3 + 1
+#define READ_LENGTH MAX_NAME_LEN + MAX_PASSWORD_LEN + DATA_LENGTH + 1
 #define WRITE_LEN READ_LENGTH
 #define MIN_START_AMOUNT 3 // 3 digit sum
-#define MAX_AMOUNT 12 // 12 digit number
+#define MAX_AMOUNT 20 // 20 digit number
 #define UNUSED_SLOT 96 // translates to ` in ASCII
 
 char user_name[MAX_NAME_LEN + 1]; //to account for the \0 at the end
 char password[MAX_PASSWORD_LEN + 1];
 char* FILE_NAME = "data.txt";
+size_t offset = 0;
 
 void print(const char* str){
     size_t length = strlen(str);
@@ -111,7 +112,18 @@ void get_string(char* str, size_t len){
         if(str[0] == '\0'){
             print("Please enter something .");
             continue;
-        }else{break;}
+        }
+        size_t input_len = strlen(str);
+        if(str[input_len - 1] == ' '){
+            print("Trailing spaces are not allowed, please try again.");
+            continue;
+        }
+        if(str[0] == ' '){
+            print("Name cannot start with a space, please try again.");
+            continue;
+        }
+        
+        break;
     }
 }
 
@@ -129,68 +141,63 @@ void print_after_commands(){
 
 bool check_info(){
     FILE* f = fopen(FILE_NAME, "r");
+    if(f == NULL){
+        print("Failed to open file.");
+        return false;
+    }
     char buf[READ_LENGTH];
-    char name[MAX_NAME_LEN];
-    char pass[MAX_PASSWORD_LEN];
-    size_t offset = 0;
-    while(fgets(buf, sizeof(buf), f) != NULL){
+    offset = 0;
+    while(fgets(buf, READ_LENGTH, f) != NULL){
+        char name[MAX_NAME_LEN];
+        char pass[MAX_PASSWORD_LEN];
+        //getting the user name
         for(size_t i = 0; i < MAX_NAME_LEN; ++i){
-            if(buf[i] == UNUSED_SLOT){continue;}
-            else{name[i] = buf[i];}
-            offset++;
+            if(buf[i] != UNUSED_SLOT){
+                name[i] = buf[i];
+            }
         }
+        //getting the password
         for(size_t i = 0; i < MAX_PASSWORD_LEN; ++i){
-            if(buf[i + offset] == UNUSED_SLOT){continue;}
-            else{pass[i] = buf[i + offset];}
-            offset++;
+            if(buf[MAX_NAME_LEN + i] != UNUSED_SLOT){
+                pass[i] = buf[i];
+            }
         }
-        printf("%s\n", name);
-        printf("%s\n", pass);
+        //checking lengths
+        if(!(strlen(name) == strlen(user_name))){continue;offset++;}
+        if(!strlen(pass) == strlen(password)){continue;offset++;}
+
+        //checking equality
+        for(size_t i = 0; i < strlen(name); i++){if(name[i] != user_name[i]){continue;offset++;}}
+        for(size_t i = 0; i < strlen(name); i++){if(pass[i] != password[i]){continue;offset++;}}
+
+        return true;
     }
     fclose(f);
-}
-
-void convert_to_string(const char* buf, float val){
-
+    return false;
 }
 
 void make_info(const char* amount){
     FILE* f = fopen(FILE_NAME, "a");
+    if(f == NULL){return;}
     char buf[WRITE_LEN];
-    printf("%s\n", user_name);
-    printf("%s\n", password);
-    printf("%s\n", amount);
     size_t offset = 0;
     for(size_t i = 0; i < MAX_NAME_LEN; ++i){
-        if(i < strlen(user_name)){
-            buf[i] = user_name[i];
-        }else{
-            buf[i] = UNUSED_SLOT;
-        }
-        offset++;
+        buf[offset++] = i < strlen(user_name) ? user_name[i] : UNUSED_SLOT;
     }
     for(size_t i = 0; i < MAX_PASSWORD_LEN; ++i){
-        if(i < strlen(password)){
-            buf[i + offset] = password[i];
-        }else{
-            buf[i + offset] = UNUSED_SLOT;
-        }
-        offset++;
+        buf[offset++] = i < strlen(password) ? password[i] : UNUSED_SLOT;
     }
     for(size_t i = 0; i < MAX_AMOUNT; ++i){
-        if(i < strlen(amount)){
-            buf[i + offset] = amount[i];
-        }else{
-            buf[i + offset] = UNUSED_SLOT;
-        }
-        offset++;
+       buf[offset++] = i < strlen(amount) ? amount[i] : UNUSED_SLOT;
     }
-    fputs(buf, f);
+    fwrite(buf, sizeof(char), WRITE_LEN, f);
+    fputc('\n', f);
     fclose(f);
 }
 
 void enter_login_mode(){
-
+    print("You have sucessfully logined !");
+    print_after_commands();
 }
 
 int main(){
