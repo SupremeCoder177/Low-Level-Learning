@@ -1,2 +1,5 @@
 *.exe
+*.h
+*.dll
+SDL3/
 .vscode
