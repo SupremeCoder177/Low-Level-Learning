@@ -1,14 +1,17 @@
 #include <iostream>
 #include <SDL3/SDL.h>
 #include <math.h>
+#include <vector>
 
-#define FPS 60
+#define FPS 100
 #define FRAME_DELAY 1000 / 60
 #define FLOOR 500
 #define WINDOW_HEIGHT 600
 #define WINDOW_WIDTH 800
 #define DEGREE 0.0174533
 #define PI 3.14159265359
+#define GRAV 2
+#define ACC 0.75
 
 //SDL3 has no implmentation for drawing circles, hence this function
 void DrawCircle(SDL_Renderer* renderer, Uint32 center_x, Uint32 center_y, Uint32 radius, float start_angle, float stop_angle, bool fill){
@@ -32,8 +35,10 @@ void DrawCircle(SDL_Renderer* renderer, Uint32 center_x, Uint32 center_y, Uint32
         x = cos(i) * radius + center_x;
         y = sin(i) * radius + center_y;
     }
+}
 
-
+void apply_gravity(Uint32* y, size_t* count){
+    *y += GRAV + ((*(count) % FPS) * ACC);
 }
 
 
@@ -59,6 +64,14 @@ int main(){
         std::cerr << "Couldn't make rendered, exiting." << std::endl;
         return 1;
     }
+
+    std::vector<uint32_t> blocks;
+    Uint32 player_x, player_y, count;
+    player_x = 100;
+    player_y = 0;
+    count = 0;
+    short player_height = 50;
+    short player_width = 50;
 
     bool running = true;
     SDL_Event event;
@@ -99,8 +112,28 @@ int main(){
         SDL_SetRenderDrawColor(renderer, 200, 200, 200, 200);
         DrawCircle(renderer, WINDOW_WIDTH - 100, 100, 49, DEGREE * 30, DEGREE * 270, true);
 
+        //updating the player
+        apply_gravity(&player_y, &count);
+
+        if(player_y + player_height >= FLOOR){
+            count = 0;
+            player_y = FLOOR - player_height;
+        }
+
+        //drawing the player
+        SDL_FRect player_rect;
+        player_rect.h = player_height;
+        player_rect.w = player_width;
+        player_rect.x = player_x;
+        player_rect.y = player_y;
+
+        SDL_SetRenderDrawColor(renderer, 200, 200, 200, 200);
+        SDL_RenderRect(renderer, &player_rect);
+
+        //updating the screen
         SDL_RenderPresent(renderer);
 
+        // setting fps
         Uint32 end_time = SDL_GetTicks();
         if(FRAME_DELAY < (end_time - start_time)){
             SDL_Delay((end_time - start_time) - FRAME_DELAY);
