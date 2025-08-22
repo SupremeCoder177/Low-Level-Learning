@@ -76,13 +76,14 @@ int main(){
     bool running = true;
     SDL_Event event;
 
+    bool move_up, move_down, move_left, move_right;
+    move_up = false;
+    move_down = false;
+    move_left = false;
+    move_right = false;
+
     while(running){
 
-        bool move_up, move_down, move_left, move_right;
-        move_up = false;
-        move_down = false;
-        move_left = false;
-        move_right = false;
 
         while(SDL_PollEvent(&event)){
             if(event.type == SDL_EVENT_QUIT) running = false;
@@ -100,6 +101,21 @@ int main(){
                 }
                 if(event.key.key == SDLK_S){
                     move_down = true;
+                }
+            }
+            if(event.type == SDL_EVENT_KEY_UP){
+                if(event.key.key == SDLK_ESCAPE) running = false;
+                if(event.key.key == SDLK_D){
+                    move_right = false;
+                }
+                if(event.key.key == SDLK_A){
+                    move_left = false;
+                }
+                if(event.key.key == SDLK_W){
+                    move_up = false;
+                }
+                if(event.key.key == SDLK_S){
+                    move_down = false;
                 }
             }
         }
