@@ -1,0 +1,47 @@
+In C and C++ when you want to use extra memory in heap you use the following three functions
+
+malloc, calloc and realloc.
+
+malloc = void* malloc(size_t size)
+
+This funcions returns a void* to a memory section in the heap with a size of 
+the size passed into the function
+The size is in bytes.
+
+So if you want to store an integer into the heap with malloc you would do something like this:
+int* num = (int*) malloc(sizeof(int))
+
+We need to parse the void* into an int* to use it as an integer pointer.
+
+Or say you want to store an array of integers on the heap:
+int* nums = (int*) malloc(4 * sizeof(int))
+
+This creates an array of integer pointers
+to assign:
+
+*nums = 1;
+*(nums + 1) = 2; and so on
+
+or 
+
+nums[0] = 1;
+nums[1] = 2;
+
+in C and C++ *(nums + n) is the same as nums[n - 1]
+
+
+Let's talk about calloc now,
+
+calloc = void* calloc(size_t num, size_t size)
+
+Calloc reserves a contiguous memory in heap of size, size * num.
+The difference between malloc and calloc is not just that they use different parameters as arguments,
+but that when you allocate memory in the heap with malloc the data that was in the heap is still there
+and can be derefrenced, but calloc sets all bits to 0.
+
+Let's talk about realloc now,
+
+realloc = void* realloc(void* ptr, size_t size)
+
+this functions takes a pointer to a heap memory and reassigns the size of that memory section
+to the size argument passed into it.
