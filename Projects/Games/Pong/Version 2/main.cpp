@@ -177,7 +177,6 @@ int main(){
             ball_x += ball_move_speed;
         }
 
-
         //checking ball collision with walls
         if(moving_right && ball_x + radius + ball_move_speed >= actual_w){
             moving_right = false;
