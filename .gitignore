@@ -3,3 +3,4 @@
 *.dll
 SDL3/
 .vscode
+.idea/
