@@ -27,7 +27,7 @@ class SpreadSheet{
         for(int i = 0; i < chars.size(); i++){
             output += pow(10, chars.size() - (i + 1)) * ((int) chars[i] - (int) '0');
         }
-        return output;
+        return output - 1;
     }
 
     void get_start_and_offset(std::string cell, int* storage){
@@ -57,6 +57,10 @@ class SpreadSheet{
         size = 26 * rows;
         arr = new int[size];
         row_size = 26;
+
+        for(int i = 0; i < size; i++){
+            arr[i] = 0;
+        }
     }
 
     ~SpreadSheet(){
@@ -64,17 +68,15 @@ class SpreadSheet{
     }
 
     void setCell(std::string cell, int value ){
-        int* temp = new int[2];
+        int temp[2];
         get_start_and_offset(cell, temp);
         arr[temp[0] * row_size + temp[1]] = value;
-        delete[] temp;
     }
 
     void resetCell(std::string cell){
-        int* temp = new int[2];
+        int temp[2];
         get_start_and_offset(cell, temp);
         arr[temp[0] * row_size + temp[1]] = 0;
-        delete[] temp;
     }
 
     int getValue(std::string formula){
@@ -147,8 +149,8 @@ class SpreadSheet{
 int main(){
     
     SpreadSheet sheet(45);
-    //sheet.setCell("A1", 12);
-    int val = sheet.getValue("=L30+X33");
+    sheet.setCell("A1", 12);
+    int val = sheet.getValue("=A1+4");
     std::cout << val << std::endl;
 
     return 0;
