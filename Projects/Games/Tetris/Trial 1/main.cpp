@@ -4,6 +4,7 @@
 #include <random>
 #include <functional>
 #include <ctime>
+#include <map>
 
 
 #define W_WIDTH 900
@@ -11,6 +12,7 @@
 #define GRID_WIDTH W_WIDTH * 0.7
 #define GRID_HEIGHT W_HEIGHT
 #define FPS 3
+#define INPUT_DELAY 1000 / FPS
 #define DELAY 1000 / FPS
 #define BRICK_FALL_SPEED 1
 #define TILE_SIZE 50
@@ -56,6 +58,20 @@ void draw_grid(SDL_Renderer* renderer, int r, int g, int b, int a){
 }
 
 
+// this function draws the occupied tiles on the screen
+void draw_tiles(SDL_Renderer* renderer, map<vector<int>, map<vector<int>, bool>> tiles){
+    for(auto [tile, color_style] : tiles){
+        vector<int> color;
+        bool fill_type;
+        for(auto [c, f_type] : color_style){
+            color = c;
+            fill_type = f_type;
+        }
+        draw_square(renderer, color[0], color[1], color[2], color[3], tile[0], tile[1], fill_type);
+    }
+}
+
+
 // this function changes the grid color
 Uint64 change_grid_color(vector<int>& color, bool randomize, int min){
     for(int i = 0; i < color.size() - 1; i++){
@@ -80,14 +96,49 @@ class BrickFactory{
 
     public:
 
+    int get_number_of_brick(){
+        return 2;
+    }
+
+    int get_orientations_limit(int brick){
+        switch(brick){
+            case 1:
+                return 1;
+                break;
+            case 2:
+                return 4;
+                break;
+            default:
+                return 0;
+                break;
+        }
+    }
+
+    //returns a color from the options listed
     vector<int> get_color(){
-        int temp = rand() % 1;
+        int temp = rand() % 5;
         vector<int> color;
         switch (temp){
+        //red
         case 0:
             color = {200, 0, 0, 255};
             break;
-        
+        //green
+        case 1:
+            color = {0, 200, 0, 255};
+            break;
+        //blue
+        case 2:
+            color = {0, 0, 200, 255};
+            break;
+        //purple like
+        case 3:
+            color = {200, 0, 200, 255};
+            break;
+        //cyan like
+        case 4:
+            color = {0, 200, 200, 255};
+            break;
         default:
             break;
         }
@@ -107,9 +158,34 @@ class BrickFactory{
         return output;
     }
 
-
+    vector<vector<int>> brick2(int x, int y, int orient){
+        vector<vector<int>> output;
+        output.push_back(get_tile(x, y, 0, 0));
+        switch(orient){
+            case 0:
+                output.push_back(get_tile(x, y, TILE_SIZE, 0));
+                output.push_back(get_tile(x, y, -TILE_SIZE, 0));
+                output.push_back(get_tile(x, y, 0, -TILE_SIZE));
+                break;
+            case 1:
+                output.push_back(get_tile(x, y, TILE_SIZE, 0));
+                output.push_back(get_tile(x, y, 0, TILE_SIZE));
+                output.push_back(get_tile(x, y, 0, -TILE_SIZE));
+                break;
+            case 2:
+                output.push_back(get_tile(x, y, 0, TILE_SIZE));
+                output.push_back(get_tile(x, y, -TILE_SIZE, 0));
+                output.push_back(get_tile(x, y, TILE_SIZE, 0));
+                break;
+            case 3:
+                output.push_back(get_tile(x, y, -TILE_SIZE, 0));
+                output.push_back(get_tile(x, y, 0, TILE_SIZE));
+                output.push_back(get_tile(x, y, 0, -TILE_SIZE));
+                break;
+        }
+        return output;
+    }
 };
-
 
 
 class Brick{
@@ -123,66 +199,157 @@ class Brick{
     vector<int> color;
 
     public:
-    Brick(SDL_Renderer* renderer, int x, int y){
-        this->x = x;
-        this->y = y;
-        this->brick = 1;
-        this->orient = 0;
+    Brick(SDL_Renderer* renderer){
         this->renderer = renderer;
-        this->color = BrickFactory().get_color();
-        this->fill = rand() % 2;
-
-        switch(this->brick){
-            case 1:
-                upper_limit = 1;
-                break;
-        }
+        this->reset();
     }
 
+    // returns the color of the current brick
+    vector<int> get_color(){
+        return this->color;
+    }
+
+    // returns the fill type for the current brick
+    bool get_fill_type(){
+        return this->fill;
+    }
+    
+    // moves the brick downward
     void apply_gravity(){
         this->y += TILE_SIZE;
     }
 
-    void check_floor_contact(){
-
+    // checks if the brick has collided with the other occupied cells, or the floor
+    bool check_brick_contact(vector<vector<int>> occupied){
+        if(reached_floor()) return true;
+        for(auto v : get_tiles()){
+            for(auto tile : occupied){
+                if(v[0] == tile[0] && v[1] == tile[1]) return true;
+            }
+        }
+        return false;
     }
 
-    void draw(){
+    // returns the tiles occupied by the brick
+    vector<vector<int>> get_tiles(){
         vector<vector<int>> temp;
         switch (this->brick){
         case 1:
             temp = BrickFactory().brick1(this->x, this->y, this->orient);
             break;
+        case 2:
+            temp = BrickFactory().brick2(this->x, this->y, this->orient);
+            break;
         }
+        return temp;
+    }
+
+    // draws the brick
+    void draw(){
+        vector<vector<int>> temp = get_tiles();
         for(auto v : temp){
             draw_square(this->renderer, this->color[0], this->color[1], this->color[2], this->color[3], v[0], v[1], this->fill);
         }
     }
 
+    // resets the brick
+    void reset(){
+        this->x = TILE_SIZE * (rand() % (int)(GRID_WIDTH / TILE_SIZE));
+        this->y = -TILE_SIZE;
+        this->brick = 1 + (rand() % BrickFactory().get_number_of_brick());
+        this->orient = 0;
+        this->color = BrickFactory().get_color();
+        this->fill = rand() % 2;
+        this->orient = 0;
+        this->upper_limit = BrickFactory().get_orientations_limit(this->brick);
+    }
+
+
+    //takes in horizontal movement input
     void take_input(){
+        const bool* keyboardState  = SDL_GetKeyboardState(NULL);
 
+        //horizontal moevement input
+        if(keyboardState[SDL_SCANCODE_LEFT]){
+            check_valid_tiles(-TILE_SIZE);
+        }
+        if(keyboardState[SDL_SCANCODE_RIGHT]){
+            check_valid_tiles(TILE_SIZE);
+        }
+
+        // orientation changing input
+        if(keyboardState[SDL_SCANCODE_UP]){
+            this->inc_orient();
+        }
+        if(keyboardState[SDL_SCANCODE_DOWN]){
+            this->dec_orient();
+        }
     }
 
-    void check_valid_tiles(){
-
+    // checks if the passed tile if in the bounds of the grid
+    bool check_out_of_bounds(vector<int> tile){
+        if(tile[0] < 0 || tile[0] > GRID_WIDTH) return false;
+        if(tile[1] + TILE_SIZE > GRID_HEIGHT) return false;
+        return true;
     }
 
-    void update(){
+    // checks if the current occupied tiles + dx if in the bounds of the grid
+    void check_valid_tiles(int dx){
+        vector<vector<int>> temp = get_tiles();
+        for(auto v : temp) {
+            v[0] += dx;
+            if(!check_out_of_bounds(v)) return;
+        }
+        this->x += dx;
+    }
+
+    // the main function to call in order to take input, move, and draw the current brick
+    // returns the occupied tiles if collides with floor or other occupied tiles
+    vector<vector<int>> update(vector<vector<int>> cells){
+        vector<vector<int>> output;
         this->apply_gravity();
         this->take_input();
-        this->check_valid_tiles();
-        this->check_floor_contact();
+        bool temp = this->check_brick_contact(cells);
+        if(temp) this->y -= TILE_SIZE;
         this->draw();
+        if(temp) return get_tiles();
+        else return output;
     }
 
+    // checks if any tile in the current occupied tiles have reached the floor
+    bool reached_floor(){
+        vector<vector<int>> temp = get_tiles();
+        for(auto v : temp){
+            if(v[1] >= GRID_HEIGHT) return true;
+        }
+        return false;
+    }
+
+    // looping the orientation variable
+    // increases the orientation if valid bounds
     void inc_orient(){
+        int temp = this->orient;
         this->orient++;
         if(this->orient >= this->upper_limit) this->orient = 0;
+        for(auto tile : get_tiles()){
+            if(!check_out_of_bounds(tile)){
+                this->orient = temp;
+                break;
+            }
+        }
     }
 
+    // decreases the orientation if valid bounds
     void dec_orient(){
+        int temp = this->orient;
         this->orient--;
         if(this->orient < 0) this->orient = this->upper_limit - 1;
+        for(auto tile : get_tiles()){
+            if(!check_out_of_bounds(tile)){
+                this->orient = temp;
+                break;
+            }
+        }
     }
 
 };
@@ -213,15 +380,21 @@ int main(){
     srand(time(0));
 
     // variables
+
+    // grid color varaibles
     vector<int> grid_color = {100, 100, 100, 200};
     Uint64 last_change_time;
 
+    // cells variable
+    vector<vector<int>> occupied_cells;
+    map<vector<int>, map<vector<int>, bool>> color_mapping; // holds the color and fill type for each occupied tile
     
     //const variable
     const Uint64 color_change_delay = 1000;
     bool running = true;
-    Brick brick(renderer, 0, 0);
+    Brick brick(renderer);
 
+    //running the main game loop
     cout << "running" << endl;
     SDL_Event event;
     while(running){
@@ -239,12 +412,27 @@ int main(){
 
         //drawing the grid
         draw_grid(renderer, grid_color[0], grid_color[1], grid_color[2], grid_color[3]);
-        if(SDL_GetTicks() - last_change_time >= color_change_delay){
-            last_change_time = change_grid_color(grid_color, true, 100);
+
+        //un-comment this code block to get a random colored grid which changes color every second
+        // if(SDL_GetTicks() - last_change_time >= color_change_delay){
+        //     last_change_time = change_grid_color(grid_color, true, 100);
+        // }
+
+        vector<vector<int>> temp = brick.update(occupied_cells);
+        if(temp.size() != 0){ 
+            vector<int> color = brick.get_color();
+            bool fill_type = brick.get_fill_type();
+            brick.reset();
+            for(auto v : temp) {
+                occupied_cells.push_back(v);
+                map<vector<int>, bool> color_style;
+                color_style[color] = fill_type;
+                color_mapping[v] = color_style;
+            }
         }
 
-        //updating and drawing the brick
-        brick.update();
+        // drawing the occupied tiles on the screen
+        draw_tiles(renderer, color_mapping);
 
         //rendering the presnt frame
         SDL_RenderPresent(renderer);
