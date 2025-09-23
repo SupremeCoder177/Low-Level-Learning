@@ -12,7 +12,7 @@ public:
         if(divisor < 0 && dividend > 0) negative = true;
 
 
-        if(abs(divisor) == 1){
+        if(abs((long long) divisor) == 1){
             if(negative){
                 if(dividend < 0) return dividend;
                 else return -dividend;

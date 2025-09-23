@@ -28,22 +28,23 @@ class Solution {
         int n = s.length();
         if(n < check_length) return output;
 
-        int left_ptr = 0;
+        int left_ptr = 0, right_ptr = check_length - 1;
         int delta = words[0].length();
         int total_words = words.size();
         map<string, int> temp;
         map<string, int> words_mapping = map_items(words);
 
-        while(left_ptr < n - check_length){
+        while(right_ptr < n){
             temp.clear();
-            for(int i = left_ptr; i <= left_ptr + check_length; i += delta){
+            for(int i = left_ptr; i <= right_ptr; i += delta){
                 string sub = s.substr(i, delta);
                 temp[sub]++;
             }
 
             if(temp == words_mapping) output.push_back(left_ptr);
 
-            left_ptr += 1;
+            left_ptr += delta - 1;
+            right_ptr += delta - 1;
         }
         return output;
     }
