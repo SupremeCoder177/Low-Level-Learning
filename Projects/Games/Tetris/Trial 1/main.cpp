@@ -7,15 +7,17 @@
 #include <map>
 
 
-#define W_WIDTH 900
-#define W_HEIGHT 800
-#define GRID_WIDTH W_WIDTH * 0.7
-#define GRID_HEIGHT W_HEIGHT
+#define TILE_SIZE 50
+#define NUM_ROWS 17
+#define NUM_COLS 12
+#define GRID_WIDTH NUM_COLS * TILE_SIZE
+#define GRID_HEIGHT NUM_ROWS * TILE_SIZE
+#define W_WIDTH GRID_WIDTH + 200
+#define W_HEIGHT GRID_HEIGHT
 #define FPS 3
 #define INPUT_DELAY 1000 / FPS
 #define DELAY 1000 / FPS
 #define BRICK_FALL_SPEED 1
-#define TILE_SIZE 50
 
 
 using namespace std;
@@ -86,6 +88,98 @@ Uint64 change_grid_color(vector<int>& color, bool randomize, int min){
 }
 
 
+// checks if a line/lines on the grid is completely filled with blocks
+// and returns the y-level of the row/rows, 
+// the last index of the vector is the number of rows that are filled
+// (The reason it used the map if because it is ordered)
+vector<int> check_line(map<vector<int>, map<vector<int>, bool>> tiles_mapping){
+    int count = 0;
+    vector<int> output;
+    for(int i = 0; i < NUM_ROWS; i++){
+        bool filled = true;
+        int j = 0;
+        for(; j < NUM_COLS; j++){
+            vector<int> temp = {j * TILE_SIZE, i * TILE_SIZE};
+            if(tiles_mapping.find(temp) == tiles_mapping.end()){
+                filled = false;
+                break;
+            }
+        }
+        if(filled){ 
+            count++;
+            output.push_back(i * TILE_SIZE);
+        }
+    }
+    output.push_back(count);
+    return output;
+}
+
+// removes the tiles from the color_map and tiles argument where the y-level = the y-level passed into the function
+void remove_yLayeredTiles(int y, map<vector<int>, map<vector<int>, bool>>& color_map, vector<vector<int>>& tiles){
+
+    // removing from the tiles vector
+    for(int i = 0; i < tiles.size(); i++){
+        if(tiles[i][1] == y){
+            tiles.erase(tiles.begin() + i);
+        }
+    }
+
+    // removing from the color_map
+    for(auto it = color_map.begin(); it != color_map.end();){
+        if(it->first[1] == y){
+            it = color_map.erase(it);
+        }else{
+            it++;
+        }
+    }
+}
+
+// moves all tiles above the y_level provided, by the number of rows provided
+void move_tiles_down(int y, int rows, map<vector<int>, map<vector<int>, bool>>& color_map, vector<vector<int>>& tiles){
+
+    // moving the tiles in the vector
+    for(auto vec : tiles){
+        if(vec[1] < y){
+            vec[1] += rows * TILE_SIZE;
+        }
+    }
+
+    // moving the tiles in the color_map
+    for(auto it = color_map.begin(); it != color_map.end(); ){
+        if(it->first[1] < y){
+            auto val = it->second;
+            vector<int> temp = {it->first[0], it->first[1] + (rows * TILE_SIZE)};
+            it = color_map.erase(it);
+            color_map[temp] = val;
+        }else{
+            it++;
+        }
+    }
+}
+
+
+// this functions removes the y-levels passed into it and moves the tiles down as well
+void remove_lines(vector<int> levels, map<vector<int>, map<vector<int>, bool>>& color_map, vector<vector<int>>& tiles){
+    if(levels[levels.size() - 1] == 0) return;
+
+    for(int level : levels) cout << level << " ";
+    cout << endl;
+    
+    int min_level = levels[0];
+
+    // removing the filled rows
+    for(int i = 0; i < levels.size() - 1; i++){
+        int y_level = levels[i];
+        if(y_level < min_level) min_level = y_level;
+        remove_yLayeredTiles(y_level, color_map, tiles);
+    }
+
+    // moving the tiles down
+    move_tiles_down(min_level, levels[levels.size() - 1], color_map, tiles);
+}
+
+
+// Holds all the brick types and color types, you can add color types in the get_color function
 class BrickFactory{
 
     private:
@@ -94,12 +188,35 @@ class BrickFactory{
         return temp;
     }
 
+    bool check_out_of_bounds(int x, int y, int brick){
+        for(int i = 0; i < get_orientations_limit(brick); i++){
+            vector<vector<int>> temp;
+            switch(brick){
+                case 1:
+                    temp = brick1(x, y, i);
+                    break;
+                case 2:
+                    temp = brick2(x, y, i);
+                    break;
+                default:
+                    break;
+            }
+            for(auto vec : temp){
+                if(vec[0] < 0 || vec[0] + TILE_SIZE > GRID_WIDTH) return false;
+            }
+        }
+        return true;
+    }
+
     public:
 
+    // returns the total number of brick types in the factory
+    // you can add more if you like :)
     int get_number_of_brick(){
         return 2;
     }
 
+    // returns the number of orientations for the given brick type
     int get_orientations_limit(int brick){
         switch(brick){
             case 1:
@@ -112,6 +229,15 @@ class BrickFactory{
                 return 0;
                 break;
         }
+    }
+
+    // returns a x coordinate which will not be out_of_bounds for the given brick type
+    int get_valid_x_pos(int brick, int y){
+        int x = (rand() % NUM_COLS) * TILE_SIZE;
+        while(!check_out_of_bounds(x, y, brick)){
+            x = (rand() % NUM_COLS) * TILE_SIZE;
+        }
+        return x;
     }
 
     //returns a color from the options listed
@@ -254,9 +380,9 @@ class Brick{
 
     // resets the brick
     void reset(){
-        this->x = TILE_SIZE * (rand() % (int)(GRID_WIDTH / TILE_SIZE));
         this->y = -TILE_SIZE;
         this->brick = 1 + (rand() % BrickFactory().get_number_of_brick());
+        this->x = BrickFactory().get_valid_x_pos(this->brick, this->y);
         this->orient = 0;
         this->color = BrickFactory().get_color();
         this->fill = rand() % 2;
@@ -288,7 +414,7 @@ class Brick{
 
     // checks if the passed tile if in the bounds of the grid
     bool check_out_of_bounds(vector<int> tile){
-        if(tile[0] < 0 || tile[0] > GRID_WIDTH) return false;
+        if(tile[0] < 0 || tile[0] + TILE_SIZE > GRID_WIDTH) return false;
         if(tile[1] + TILE_SIZE > GRID_HEIGHT) return false;
         return true;
     }
@@ -351,7 +477,6 @@ class Brick{
             }
         }
     }
-
 };
 
 
@@ -431,8 +556,12 @@ int main(){
             }
         }
 
+        // checking if a line is filled, and removing it as well
+        remove_lines(check_line(color_mapping), color_mapping, occupied_cells);
+
         // drawing the occupied tiles on the screen
         draw_tiles(renderer, color_mapping);
+
 
         //rendering the presnt frame
         SDL_RenderPresent(renderer);
