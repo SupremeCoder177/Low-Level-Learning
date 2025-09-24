@@ -31,20 +31,36 @@ class Solution {
         return temp;
     }
 
+    int comapareVersions(string ver1, string ver2){
+        int temp1 = getNumFromString(ver1);
+        int temp2 = getNumFromString(ver2);
+        if(temp1 == temp2) return 0;
+        else if(temp1 < temp2) return -1;
+        else return 1;
+    }
+
     public:
     int compareVersion(string version1, string version2) {
         vector<string> temp1 = getSubVersions(version1);
         vector<string> temp2 = getSubVersions(version2);
 
-        int ver1, ver2;
-        int i = 0;
-        while(i < temp1.size() && i < temp2.size()){
-            if(getNumFromString(temp1[i]) < getNumFromString(temp2[i])) return -1;
-            else if(getNumFromString(temp1[i]) > getNumFromString(temp2[i])) return 1;
-            i++;
+        int index = 0;
+        while(index < temp1.size() && index < temp2.size()){
+            int compare = comapareVersions(temp1[index], temp2[index]);
+            if(compare != 0) return compare;
+            index++;
         }
-        if(i < temp1.size()) return 1;
-        else if(i < temp2.size()) return -1;
+
+        while(index < temp1.size()){
+            if(getNumFromString(temp1[index]) != 0) return 1;
+            index++;
+        }
+
+        while(index < temp2.size()){
+            if(getNumFromString(temp2[index]) != 0) return -1;
+            index++;
+        }
+
         return 0;
     }
 };
