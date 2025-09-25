@@ -138,9 +138,9 @@ void remove_yLayeredTiles(int y, map<vector<int>, map<vector<int>, bool>>& color
 void move_tiles_down(int y, int rows, map<vector<int>, map<vector<int>, bool>>& color_map, vector<vector<int>>& tiles){
 
     // moving the tiles in the vector
-    for(auto vec : tiles){
-        if(vec[1] < y){
-            vec[1] += rows * TILE_SIZE;
+    for(int i = 0; i < tiles.size(); i++){
+        if(tiles[i][1] < y){
+            tiles[i][1] += rows * TILE_SIZE;
         }
     }
 
@@ -161,9 +161,6 @@ void move_tiles_down(int y, int rows, map<vector<int>, map<vector<int>, bool>>& 
 // this functions removes the y-levels passed into it and moves the tiles down as well
 void remove_lines(vector<int> levels, map<vector<int>, map<vector<int>, bool>>& color_map, vector<vector<int>>& tiles){
     if(levels[levels.size() - 1] == 0) return;
-
-    for(int level : levels) cout << level << " ";
-    cout << endl;
     
     int min_level = levels[0];
 
@@ -198,6 +195,12 @@ class BrickFactory{
                 case 2:
                     temp = brick2(x, y, i);
                     break;
+                case 3:
+                    temp = brick3(x, y, i);
+                    break;
+                case 4:
+                    temp = brick4(x, y, i);
+                    break;
                 default:
                     break;
             }
@@ -213,7 +216,7 @@ class BrickFactory{
     // returns the total number of brick types in the factory
     // you can add more if you like :)
     int get_number_of_brick(){
-        return 2;
+        return 4;
     }
 
     // returns the number of orientations for the given brick type
@@ -221,10 +224,12 @@ class BrickFactory{
         switch(brick){
             case 1:
                 return 1;
-                break;
             case 2:
                 return 4;
-                break;
+            case 3:
+                return 2;
+            case 4:
+                return 4;
             default:
                 return 0;
                 break;
@@ -311,6 +316,52 @@ class BrickFactory{
         }
         return output;
     }
+
+    vector<vector<int>> brick3(int x, int y, int orient){
+        vector<vector<int>> output;
+        output.push_back(get_tile(x, y, 0, 0));
+        switch(orient){
+            case 0:
+                output.push_back(get_tile(x, y, TILE_SIZE, 0));
+                output.push_back(get_tile(x, y, -TILE_SIZE, 0));
+                output.push_back(get_tile(x, y, 2 * TILE_SIZE, 0));
+                break;
+            case 1:
+                output.push_back(get_tile(x, y, 0, TILE_SIZE));
+                output.push_back(get_tile(x, y, 0, -TILE_SIZE));
+                output.push_back(get_tile(x, y, 0, 2 * TILE_SIZE));
+                break;
+        }
+        return output;
+    }
+
+    vector<vector<int>> brick4(int x, int y, int orient){
+        vector<vector<int>> output;
+        output.push_back(get_tile(x, y, 0, 0));
+        switch(orient){
+            case 0:
+                output.push_back(get_tile(x, y, 0, -TILE_SIZE));
+                output.push_back(get_tile(x, y, TILE_SIZE, 0));
+                output.push_back(get_tile(x, y, 2 * TILE_SIZE, 0));
+                break;
+            case 1:
+                output.push_back(get_tile(x, y, TILE_SIZE, 0));
+                output.push_back(get_tile(x, y, 0, TILE_SIZE));
+                output.push_back(get_tile(x, y, 0, 2 * TILE_SIZE));
+                break;
+            case 2:
+                output.push_back(get_tile(x, y, 0, TILE_SIZE));
+                output.push_back(get_tile(x, y, -TILE_SIZE, 0));
+                output.push_back(get_tile(x, y, -2 * TILE_SIZE, 0));
+                break;
+            case 3:
+                output.push_back(get_tile(x, y, -TILE_SIZE, 0));
+                output.push_back(get_tile(x, y, 0, -TILE_SIZE));
+                output.push_back(get_tile(x, y, 0, -2 * TILE_SIZE));
+                break;
+        }
+        return output;
+    }
 };
 
 
@@ -346,9 +397,9 @@ class Brick{
     }
 
     // checks if the brick has collided with the other occupied cells, or the floor
-    bool check_brick_contact(vector<vector<int>> occupied){
+    bool check_brick_contact(vector<vector<int>> occupied, vector<vector<int>> tiles){
         if(reached_floor()) return true;
-        for(auto v : get_tiles()){
+        for(auto v : tiles){
             for(auto tile : occupied){
                 if(v[0] == tile[0] && v[1] == tile[1]) return true;
             }
@@ -365,6 +416,12 @@ class Brick{
             break;
         case 2:
             temp = BrickFactory().brick2(this->x, this->y, this->orient);
+            break;
+        case 3:
+            temp = BrickFactory().brick3(this->x, this->y, this->orient);
+            break;
+        case 4:
+            temp = BrickFactory().brick4(this->x, this->y, this->orient);
             break;
         }
         return temp;
@@ -392,15 +449,15 @@ class Brick{
 
 
     //takes in horizontal movement input
-    void take_input(){
+    void take_input(vector<vector<int>> cells){
         const bool* keyboardState  = SDL_GetKeyboardState(NULL);
 
         //horizontal moevement input
         if(keyboardState[SDL_SCANCODE_LEFT]){
-            check_valid_tiles(-TILE_SIZE);
+            check_valid_tiles(-TILE_SIZE, cells);
         }
         if(keyboardState[SDL_SCANCODE_RIGHT]){
-            check_valid_tiles(TILE_SIZE);
+            check_valid_tiles(TILE_SIZE, cells);
         }
 
         // orientation changing input
@@ -414,19 +471,21 @@ class Brick{
 
     // checks if the passed tile if in the bounds of the grid
     bool check_out_of_bounds(vector<int> tile){
-        if(tile[0] < 0 || tile[0] + TILE_SIZE > GRID_WIDTH) return false;
-        if(tile[1] + TILE_SIZE > GRID_HEIGHT) return false;
-        return true;
+        if(tile[0] < 0 || tile[0] + TILE_SIZE > GRID_WIDTH) return true;
+        if(tile[1] + TILE_SIZE > GRID_HEIGHT) return true;
+        return false;
     }
 
     // checks if the current occupied tiles + dx if in the bounds of the grid
-    void check_valid_tiles(int dx){
-        vector<vector<int>> temp = get_tiles();
-        for(auto v : temp) {
+    void check_valid_tiles(int dx, vector<vector<int>> occupied){
+        for(auto v : get_tiles()) {
             v[0] += dx;
-            if(!check_out_of_bounds(v)) return;
+            if(check_out_of_bounds(v)) return;
         }
         this->x += dx;
+        if(check_brick_contact(occupied, get_tiles())){
+            this->x -= dx;
+        }
     }
 
     // the main function to call in order to take input, move, and draw the current brick
@@ -434,8 +493,8 @@ class Brick{
     vector<vector<int>> update(vector<vector<int>> cells){
         vector<vector<int>> output;
         this->apply_gravity();
-        this->take_input();
-        bool temp = this->check_brick_contact(cells);
+        this->take_input(cells);
+        bool temp = this->check_brick_contact(cells, get_tiles());
         if(temp) this->y -= TILE_SIZE;
         this->draw();
         if(temp) return get_tiles();
@@ -458,7 +517,7 @@ class Brick{
         this->orient++;
         if(this->orient >= this->upper_limit) this->orient = 0;
         for(auto tile : get_tiles()){
-            if(!check_out_of_bounds(tile)){
+            if(check_out_of_bounds(tile)){
                 this->orient = temp;
                 break;
             }
@@ -471,7 +530,7 @@ class Brick{
         this->orient--;
         if(this->orient < 0) this->orient = this->upper_limit - 1;
         for(auto tile : get_tiles()){
-            if(!check_out_of_bounds(tile)){
+            if(check_out_of_bounds(tile)){
                 this->orient = temp;
                 break;
             }
@@ -561,7 +620,6 @@ int main(){
 
         // drawing the occupied tiles on the screen
         draw_tiles(renderer, color_mapping);
-
 
         //rendering the presnt frame
         SDL_RenderPresent(renderer);
