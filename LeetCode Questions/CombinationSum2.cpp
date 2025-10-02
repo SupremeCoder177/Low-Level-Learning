@@ -76,8 +76,6 @@ class Solution {
 
     public:
     vector<vector<int>> combinationSum2(vector<int>& candidates, int target) {
-        mergeSort(candidates);
-
         vector<vector<int>> output;
         set<vector<int>> temp;
 
@@ -86,9 +84,7 @@ class Solution {
             if(candidates[i] < target){
                 vector<int> temp2 = removeAndReturnVector(candidates, i);
                 backtrackSum(temp2, holder, target - candidates[i], temp);
-            }else{
-                if(candidates[i] == target) temp.insert(holder);
-            }
+            }else if(candidates[i] == target) temp.insert({target});
         }
 
         for(auto v : temp) {
@@ -102,8 +98,8 @@ class Solution {
 
 int main(){
 
-    vector<int> temp = {10, 1, 2, 7, 6, 1, 5};
-    for(auto v : Solution().combinationSum2(temp, 8)){
+    vector<int> temp = {2, 5, 2, 1, 2};
+    for(auto v : Solution().combinationSum2(temp, 5)){
         for(int i : v) cout << i << " ";
         cout << endl;
     }

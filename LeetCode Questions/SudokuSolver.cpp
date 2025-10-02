@@ -13,92 +13,84 @@ class Solution {
         return (int) ch - (int) '0';
     }
 
-    vector<int> get_numbers_in_block(vector<vector<char>> board, int x, int y){
+    char get_char(int x){
+        return (char)( x + '0');
+    }
+
+    vector<int> get_numbers_in_block(vector<vector<char>>& board, int x, int y){
         int block_x = (int)(x / 3) * 3;
         int block_y = (int)(y / 3) * 3;
         vector<int> output;
         for(int i = block_y; i < block_y + 3; i++){
             for(int j = block_x; j < block_x + 3; j++){
-                output.push_back(get_number(board[i][j]));
+                if(board[i][j] != '.') output.push_back(get_number(board[i][j]));
             }
         }
         return output;
     }
 
-    vector<int> get_numbers_in_row(vector<vector<char>> board, int y){
+    vector<int> get_numbers_in_row(vector<vector<char>>& board, int y){
         vector<int> output;
         for(int i = 0; i < 9; i++){
-            output.push_back(get_number(board[y][i]));
+            if(board[y][i] != '.') output.push_back(get_number(board[y][i]));
         }
         return output;
     }
 
-    vector<int> get_number_in_column(vector<vector<char>> board, int x){
+    vector<int> get_number_in_column(vector<vector<char>>& board, int x){
         vector<int> output;
         for(int i = 0; i < 9; i++){
-            output.push_back(get_number(board[i][x]));
+            if(board[i][x] != '.') output.push_back(get_number(board[i][x]));
         }
         return output;
     }
 
-    int choose_number(int x, int y, vector<vector<char>> board){
-        vector<int> nums_in_block = get_numbers_in_block(board, x, y);
-        vector<int> nums_in_row = get_numbers_in_row(board, y);
-        vector<int> nums_in_col = get_number_in_column(board, x);
-
+    pair<int, int> find_first_empty(vector<vector<char>> board){
         for(int i = 0; i < 9; i++){
-            bool temp = true;
-            for(int j : nums_in_block){
-                if(j == i){
-                    temp = false;
-                    break;
+            for(int j = 0; j < 9; j++){
+                if(board[i][j] == '.'){
+                    return pair<int, int>{i, j};
                 }
             }
-            if(!temp) continue;
-            temp = true;
-            for(int j : nums_in_row){
-                if(j == i){
-                    temp = false;
-                    break;
-                }
-            }
-            if(!temp) continue;
-            temp = true;
-            for(int j : nums_in_col){
-                if(j == i){
-                    temp = false;
-                    break;
-                }
-            }
-            if(!temp) continue;
-            return i;
         }
-        return -1;
+        return pair<int, int>{-1, -1};
     }
 
     bool fill(vector<vector<char>>& board){
-        int temp;
-        for(int i = 0; i < board.size(); i++){
-            for(int j = 0; j < board[0].size(); j++){
-                temp = choose_number(j, i, board);
-                if(temp < 0){
-                    break;
-                }
-                board[i][j] = (char)(temp + (int) '0');
-            }
-            if(temp < 0) break;
+        pair<int, int> temp = find_first_empty(board);
+        if(temp.first < 0) return true;
+
+        int x = temp.second;
+        int y = temp.first;
+        
+        vector<int> available;
+        vector<int> in_row = get_numbers_in_row(board, y);
+        vector<int> in_column = get_number_in_column(board, x);
+        vector<int> in_block = get_numbers_in_block(board, x, y);
+
+        for(int i = 1; i <= 9; i++){
+            bool valid = true;
+            for(int j : in_row) {if(i == j) valid = false; break;}
+            if(!valid) continue;
+            for(int j : in_column) {if(i == j) valid = false; break;}
+            if(!valid) continue;
+            for(int j : in_block) {if(i == j) valid = false; break;}
+            if(!valid) continue;
+            if(valid) available.push_back(i);
         }
-        if(temp < 0) return false;
-        else return true;
+        if(available.empty()) return false;
+
+        for(int i : available){
+            board[temp.first][temp.second] = get_char(i);
+            if(fill(board)) return true;
+            board[temp.first][temp.second] = '.';
+        }
+        return false;
     }
 
     public:
     void solveSudoku(vector<vector<char>>& board) {
-        vector<vector<char>> copy = board;
-        while(true){
-            if(fill(board)) break;
-            else board = copy;
-        }
+        fill(board);
     }
 };
 
