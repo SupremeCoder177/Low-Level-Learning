@@ -48,10 +48,8 @@ class Solution {
         for(int i = n - 1; i >= 2; i--){
             int left = 0, right = i - 1;
             while(left < right){
-
                 if(nums[right] + nums[left] > nums[i]){
                     largest = max(largest, nums[i] + nums[left] + nums[right]);
-                    
                 }
                 left++;
             }
