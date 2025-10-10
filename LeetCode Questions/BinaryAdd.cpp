@@ -24,11 +24,8 @@ class Solution {
 
         if(a == b) {
             output = a;
-            if(output.size() == 1){
-                if(output[0] != '0') output.push_back('0');
-            }else{
-                output.push_back('0');
-            }
+            if(output.size() == 1 && output[0] == '0') return output;
+            output.push_back('0');
             return output;
         }
 
