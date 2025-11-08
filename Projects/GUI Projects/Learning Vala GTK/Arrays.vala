@@ -38,6 +38,7 @@ public class ArrayDemo{
         // refrencing a multidimensional array item
         d[2, 3] = 42;
 
+        // Yeah for some reason you can't iterate or assign individual sub-arrays in a multidimensional array
         stdout.printf("Array (d) : ");
         foreach(int i in d){
             stdout.printf(@"$i ");
