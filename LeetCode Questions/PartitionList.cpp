@@ -31,18 +31,12 @@ class Solution {
         vector<int> listView = traverseNodes(head);
         vector<int> temp;
 
-        for(int i : listView) cout << i << " ";
-        cout << endl;
-
         for(int i : listView){
             if(i < x) temp.push_back(i);
         }
         for(int i : listView){
             if(i >= x) temp.push_back(i);
         }
-
-        for(int i : temp) cout << i << " ";
-        cout << endl;
 
         ListNode* curr_node = head;
         int i = 0;
@@ -51,7 +45,6 @@ class Solution {
             i++;
             curr_node = curr_node->next;
         }
-
         return head;
     }
 };
