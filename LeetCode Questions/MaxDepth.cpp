@@ -16,28 +16,26 @@ struct TreeNode{
 
 
 class Solution {
+
+    private:
+
+    vector<TreeNode*> traverseNodes(vector<TreeNode*> in){
+        vector<TreeNode*> out;
+        for(auto node : in){
+            if(node->left != nullptr) out.push_back(node->left);
+            if(node->right != nullptr) out.push_back(node->right);
+        }
+        return out;
+    }
+
     public:
     int maxDepth(TreeNode* root) {
-        if(root == nullptr) return 0;
-        int out = 1;
+        int out = 0;
+        vector<TreeNode*> temp = {root};
 
-        queue<TreeNode*> temp;
-        temp.push(root);
-        int this_layer_nodes_count = 1;
-        int next_layer_nodes = 0;
-        
         while(!temp.empty()){
-            TreeNode* curr_node = temp.front();
-            temp.pop();
-            this_layer_nodes_count -= 1;
-            if(curr_node->left != nullptr) {temp.push(curr_node->left); next_layer_nodes++;}
-            if(curr_node->right != nullptr) {temp.push(curr_node->right); next_layer_nodes++;}
-
-            if(this_layer_nodes_count == 0 && next_layer_nodes > 0){
-                out++;
-                this_layer_nodes_count = next_layer_nodes;
-                next_layer_nodes = 0;
-            }
+            temp = traverseNodes(temp);
+            out++;
         }
         return out;
     }
