@@ -26,6 +26,8 @@ class Solution {
             }
         }
 
+        if(l == 0) return false;
+
         int start = 0, end = n;
         while(start < end){
             int index = (end - start) / 2 + start;

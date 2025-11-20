@@ -86,6 +86,7 @@ int main(){
     cout << temp->val << endl;
 
     delete temp;
+    
 
     return 0;
 }

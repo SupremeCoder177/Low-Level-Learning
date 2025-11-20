@@ -30,6 +30,7 @@ class Solution {
 
     public:
     int maxDepth(TreeNode* root) {
+        if(root == nullptr) return 0;
         int out = 0;
         vector<TreeNode*> temp = {root};
 
